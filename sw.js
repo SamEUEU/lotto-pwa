@@ -1,4 +1,4 @@
-const CACHE = "lotto-pwa-v2";
+const CACHE = "lotto-pwa-v3";
 const ASSETS = [
   "./index.html",
   "./style.css",
@@ -25,3 +25,4 @@ self.addEventListener("fetch", (e) => {
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
 });
+
