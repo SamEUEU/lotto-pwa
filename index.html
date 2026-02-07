@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>로또 번호 추천기</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="./manifest.webmanifest">
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js");
+  }
+</script>
+
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-icon">🎟️</div>
+        <div class="brand-text">
+          <div class="brand-title">로또 번호 추천기</div>
+          <div class="brand-sub">발권용지 스타일 · 전략 선택 · 데이터 업데이트</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- 좌측: 컨트롤 -->
+    <section class="card controls-card">
+      <div class="card-title">설정</div>
+
+      <div class="form">
+        <label class="field">
+          <span class="label">추천 세트 수</span>
+          <input type="number" id="sets" value="5" min="1" max="10" />
+        </label>
+
+        <label class="field">
+          <span class="label">기준</span>
+          <select id="lookback">
+            <option value="0">전체 회차</option>
+            <option value="200">최근 200회</option>
+          </select>
+        </label>
+
+        <label class="field field-wide">
+          <span class="label">추천 방식</span>
+          <select id="strategy">
+            <option value="hot">HOT(자주 나온)</option>
+            <option value="cold">COLD(오래 안 나온)</option>
+            <option value="mix" selected>MIX(자주 + 오래안나옴 혼합)</option>
+            <option value="balanced">BALANCED(균형형 프리셋: 합/홀짝/연속/구간)</option>
+            <option value="random">RANDOM(완전 무작위)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="run" class="btn primary">번호 추천</button>
+        <button id="copy" class="btn">결과 복사</button>
+        <button id="update" class="btn subtle">데이터 업데이트</button>
+      </div>
+
+      <div id="status" class="status">준비됨</div>
+
+      <div class="hint">
+        <div class="hint-title">팁</div>
+        <ul>
+          <li><b>MIX</b>는 자주 나온 + 오래 안 나온을 함께 반영합니다.</li>
+          <li><b>BALANCED</b>는 합/홀짝/연속/구간을 평균적 형태로 제한합니다.</li>
+          <li>업데이트 후에는 “번호 추천”을 다시 눌러 반영하세요.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 우측: 결과 -->
+    <section class="card result-card">
+      <div class="card-title">결과</div>
+
+      <section class="receipt">
+        <div class="r-head">
+          <div class="r-logo">Lotto 6/45</div>
+          <div class="r-meta">
+            <div id="rRound">회차: -</div>
+            <div id="rIssued">발행: -</div>
+          </div>
+        </div>
+
+        <div id="rBody" class="r-body">
+          <div class="placeholder">왼쪽에서 설정 후 “번호 추천”을 누르세요.</div>
+        </div>
+
+        <div class="r-foot">
+          <div class="r-price">금액  ₩<span id="rPrice">0</span></div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ✅ 하단: 추천 방식 설명 (전체 폭) -->
+    <section class="card explain-card full-span">
+      <div class="card-title">추천 방식 설명</div>
+
+      <div class="explain-meta">
+        <div><b>현재 전략:</b> <span id="exStrategy">-</span></div>
+        <div><b>데이터 범위:</b> <span id="exRange">-</span></div>
+      </div>
+
+      <pre id="explainText" class="explain-text">준비됨. “번호 추천” 실행 후 수식/퍼센트 방식이 표시됩니다.</pre>
+
+      <div class="explain-note">
+        ※ 아래 설명은 “선택 점수(score) 기반 추출 방식”의 공개이며, 당첨 확률을 보장하지 않습니다.
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
