@@ -4,7 +4,8 @@ const $ = (id) => document.getElementById(id);
 // 1) 네가 직접 업로드한 draws.json이 있으면 그걸 쓰는 게 제일 안정적
 // 2) 없으면 아래 예시처럼 공개 repo raw를 사용
 const GITHUB_DRAWS_URL =
-  "https://raw.githubusercontent.com/happylie/lotto_data/main/draws.json"; // ← 만약 404면 너 repo에 draws.json 올려서 그걸로 교체 권장
+  "https://raw.githubusercontent.com/sameueu/lotto-pwa/main/draws.json";
+ // ← 만약 404면 너 repo에 draws.json 올려서 그걸로 교체 권장
 
 function setStatus(msg, type = "") {
   const el = $("status");
@@ -177,3 +178,4 @@ $("explainText").textContent =
   `데이터 범위: ${rangeLabel(Number($("lookback").value))}\n\n` +
   `준비됨. 먼저 "데이터 업데이트"를 눌러 데이터를 내려받으세요.`;
 setStatus("준비됨");
+
