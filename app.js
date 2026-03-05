@@ -116,8 +116,8 @@ $("update").onclick = async () => {
     const latest = latestNo(draws);
     setStatus(`업데이트 완료! (최신 회차: ${latest || "-"}회)`, "ok");
 
-    // 화면 상단 회차도 즉시 반영(선택)
     $("rRound").textContent = latest ? `회차: 제 ${latest}회` : "회차: -";
+    renderHistory(draws);
   } catch (e) {
     setStatus("업데이트 실패: " + e.message, "err");
   } finally {
@@ -171,6 +171,37 @@ $("copy").onclick = async () => {
   }
 };
 
+function ballColor(n) {
+  if (n <= 10) return "ball-y";
+  if (n <= 20) return "ball-b";
+  if (n <= 30) return "ball-r";
+  if (n <= 40) return "ball-g";
+  return "ball-p";
+}
+
+function renderHistory(draws) {
+  const el = $("historyBody");
+  if (!draws.length) {
+    el.innerHTML = '<div class="placeholder">"데이터 업데이트"를 눌러 데이터를 먼저 받아주세요.</div>';
+    return;
+  }
+  const recent = draws.slice(-10).reverse();
+  el.innerHTML = `
+    <table class="history-table">
+      <thead><tr><th>회차</th><th>추첨일</th><th>당첨번호</th><th>+</th></tr></thead>
+      <tbody>${recent.map(d => `
+        <tr>
+          <td class="h-round">${d.drwNo}</td>
+          <td class="h-date">${(d.date || "").trim()}</td>
+          <td class="h-nums">${d.nums.map(n =>
+            `<span class="ball ${ballColor(n)}">${n}</span>`
+          ).join("")}</td>
+          <td class="h-nums"><span class="ball ${ballColor(d.bonus)}">${d.bonus}</span></td>
+        </tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+
 // 초기
 updateExplainHeader();
 $("explainText").textContent =
@@ -178,4 +209,5 @@ $("explainText").textContent =
   `데이터 범위: ${rangeLabel(Number($("lookback").value))}\n\n` +
   `준비됨. 먼저 "데이터 업데이트"를 눌러 데이터를 내려받으세요.`;
 setStatus("준비됨");
+renderHistory(loadDraws());
 
