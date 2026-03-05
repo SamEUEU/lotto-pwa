@@ -1,0 +1,29 @@
+name: Update Lotto Draws
+
+on:
+  schedule:
+    # 매주 일요일 00:00 UTC (한국시간 일요일 09:00) - 토요일 추첨 후
+    - cron: '0 0 * * 0'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch latest draws
+        run: python scripts/update_draws.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add draws.json
+          git diff --cached --quiet || (git commit -m "data: update draws.json to latest round" && git push)
