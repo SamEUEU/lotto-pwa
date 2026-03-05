@@ -70,10 +70,18 @@ def fetch_draw(session: requests.Session, no: int) -> dict | None:
             return None
         result = parse_draw_from_html(html, no)
         if result is None:
-            # Debug: show what we got
-            print(f"  [{no}] parse failed. Has '제' in html: {'제' in html}")
-            h4_matches = re.findall(r'<h4[^>]*>.*?</h4>', html[:5000], re.DOTALL)
-            print(f"  [{no}] h4 tags found: {h4_matches[:3]}")
+            # Debug: find where '제' appears
+            idx = html.find('제')
+            if idx >= 0:
+                print(f"  [{no}] context around '제': ...{html[max(0,idx-50):idx+100]}...")
+            # Find ball_645 references
+            ball_idx = html.find('ball_645')
+            if ball_idx >= 0:
+                print(f"  [{no}] ball_645 context: ...{html[max(0,ball_idx-30):ball_idx+150]}...")
+            else:
+                print(f"  [{no}] no 'ball_645' found in HTML")
+            # Show first 1000 chars
+            print(f"  [{no}] HTML start: {html[:300]}")
         return result
     except Exception as e:
         print(f"  [{no}] request failed: {e}")
