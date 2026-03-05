@@ -1,8 +1,4 @@
-"""Fetch missing lotto draws from dhlottery.co.kr and update draws.json.
-
-Strategy: GET the result page HTML and parse winning numbers from it,
-since the JSON API endpoint is blocked for bot requests.
-"""
+"""Fetch missing lotto draws from superkts.com and update draws.json."""
 
 import json
 import re
@@ -12,80 +8,47 @@ import pathlib
 import requests
 
 DRAWS_PATH = pathlib.Path(__file__).resolve().parent.parent / "draws.json"
-RESULT_URL = "https://www.dhlottery.co.kr/gameResult.do?method=byWin&drwNo={}"
+LIST_URL = "https://superkts.com/lotto/list/"
+DETAIL_URL = "https://superkts.com/lotto/{}"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 }
 
 
-def parse_draw_from_html(html: str, expected_no: int) -> dict | None:
-    """Parse winning numbers from the dhlottery result page HTML."""
-    # Extract draw number: <h4>제 1205 회</h4> or similar
-    m = re.search(r'<h4[^>]*>\s*제\s*(\d+)\s*회', html)
-    if not m:
-        return None
-    drw_no = int(m.group(1))
-    if drw_no != expected_no:
-        return None
-
-    # Extract date: (2026년 01월 03일 추첨)
-    date_match = re.search(r'\((\d{4})년\s*(\d{2})월\s*(\d{2})일\s*추첨\)', html)
-    date_str = ""
-    if date_match:
-        date_str = f"{date_match.group(1)}.{date_match.group(2)}.{date_match.group(3)} "
-
-    # Extract 6 main numbers from <span class="ball_645 lrg ball1">1</span> etc.
-    ball_pattern = re.findall(r'<span\s+class="ball_645\s+lrg\s+ball\d+"[^>]*>\s*(\d+)\s*</span>', html)
-    if len(ball_pattern) < 7:
-        # Fallback: try win_ball_645 class
-        ball_pattern = re.findall(r'class="[^"]*ball_645[^"]*"[^>]*>\s*(\d+)\s*</span>', html)
-
-    if len(ball_pattern) < 7:
-        print(f"  [{expected_no}] could not parse balls (found {len(ball_pattern)})")
-        return None
-
-    nums = sorted(int(x) for x in ball_pattern[:6])
-    bonus = int(ball_pattern[6])
-
-    return {
-        "drwNo": drw_no,
-        "date": date_str,
-        "nums": nums,
-        "bonus": bonus,
-    }
+def parse_list_page(html: str) -> list[dict]:
+    """Parse draw results from the superkts list page HTML table."""
+    results = []
+    # Each row: <tr><td>1213</td><td><span class="n1">5</span></td>...(6 nums)...<td><span>bonus</span></td><td>...</td></tr>
+    row_pattern = re.compile(
+        r'<tr><td>(\d+)</td>'  # draw number
+        r'<td><span[^>]*>(\d+)</span></td>'  # num1
+        r'<td><span[^>]*>(\d+)</span></td>'  # num2
+        r'<td><span[^>]*>(\d+)</span></td>'  # num3
+        r'<td><span[^>]*>(\d+)</span></td>'  # num4
+        r'<td><span[^>]*>(\d+)</span></td>'  # num5
+        r'<td><span[^>]*>(\d+)</span></td>'  # num6
+        r'<td><span[^>]*>(\d+)</span></td>'  # bonus
+    )
+    for m in row_pattern.finditer(html):
+        drw_no = int(m.group(1))
+        nums = sorted(int(m.group(i)) for i in range(2, 8))
+        bonus = int(m.group(8))
+        results.append({"drwNo": drw_no, "nums": nums, "bonus": bonus})
+    return results
 
 
-def fetch_draw(session: requests.Session, no: int) -> dict | None:
-    url = RESULT_URL.format(no)
+def fetch_draw_date(session: requests.Session, drw_no: int) -> str:
+    """Fetch individual draw page to get the date."""
     try:
-        resp = session.get(url, headers=HEADERS, timeout=15)
-        resp.raise_for_status()
-        html = resp.text
-        print(f"  [{no}] response length: {len(html)}, status: {resp.status_code}")
-        if len(html) < 1000:
-            print(f"  [{no}] response too short, first 500 chars: {html[:500]}")
-            return None
-        result = parse_draw_from_html(html, no)
-        if result is None:
-            # Debug: find where '제' appears
-            idx = html.find('제')
-            if idx >= 0:
-                print(f"  [{no}] context around '제': ...{html[max(0,idx-50):idx+100]}...")
-            # Find ball_645 references
-            ball_idx = html.find('ball_645')
-            if ball_idx >= 0:
-                print(f"  [{no}] ball_645 context: ...{html[max(0,ball_idx-30):ball_idx+150]}...")
-            else:
-                print(f"  [{no}] no 'ball_645' found in HTML")
-            # Show first 1000 chars
-            print(f"  [{no}] HTML start: {html[:300]}")
-        return result
-    except Exception as e:
-        print(f"  [{no}] request failed: {e}")
-        return None
+        resp = session.get(DETAIL_URL.format(drw_no), headers=HEADERS, timeout=15)
+        # Look for date pattern like 2026-01-03 or 2026.01.03
+        m = re.search(r'(\d{4})[.\-](\d{2})[.\-](\d{2})', resp.text)
+        if m:
+            return f"{m.group(1)}.{m.group(2)}.{m.group(3)} "
+    except Exception:
+        pass
+    return ""
 
 
 def main():
@@ -93,35 +56,46 @@ def main():
         data = json.load(f)
 
     draws = data["draws"]
-    last_no = draws[-1]["drwNo"] if draws else 0
+    existing = {d["drwNo"] for d in draws}
+    last_no = max(existing) if existing else 0
     print(f"Current last round: {last_no}")
 
     session = requests.Session()
 
-    added = 0
-    failures = 0
-    no = last_no + 1
-    while failures < 3:
-        result = fetch_draw(session, no)
-        if result is None:
-            failures += 1
-            no += 1
-            continue
-        draws.append(result)
-        print(f"  Added {result['drwNo']}: {result['nums']} +{result['bonus']} ({result['date'].strip()})")
-        added += 1
-        failures = 0
-        no += 1
-        time.sleep(1)
+    # Fetch the first page (most recent draws)
+    try:
+        resp = session.get(LIST_URL, headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"Failed to fetch list page: {e}")
+        return
 
-    if added:
-        # Sort by drwNo to ensure order
-        draws.sort(key=lambda x: x["drwNo"])
-        with open(DRAWS_PATH, "w", encoding="utf-8") as f:
-            json.dump({"draws": draws}, f, ensure_ascii=False)
-        print(f"\nDone! Added {added} rounds. Latest: {draws[-1]['drwNo']}")
-    else:
-        print("Already up to date (or site unreachable).")
+    page_results = parse_list_page(resp.text)
+    if not page_results:
+        print("Could not parse any draws from list page.")
+        return
+
+    print(f"Parsed {len(page_results)} draws from list page")
+
+    new_draws = [r for r in page_results if r["drwNo"] not in existing]
+    if not new_draws:
+        print("Already up to date.")
+        return
+
+    # Fetch dates for new draws
+    for draw in new_draws:
+        date = fetch_draw_date(session, draw["drwNo"])
+        draw["date"] = date
+        print(f"  Added {draw['drwNo']}: {draw['nums']} +{draw['bonus']} ({date.strip()})")
+        time.sleep(0.5)
+
+    draws.extend(new_draws)
+    draws.sort(key=lambda x: x["drwNo"])
+
+    with open(DRAWS_PATH, "w", encoding="utf-8") as f:
+        json.dump({"draws": draws}, f, ensure_ascii=False)
+
+    print(f"\nDone! Added {len(new_draws)} rounds. Latest: {draws[-1]['drwNo']}")
 
 
 if __name__ == "__main__":

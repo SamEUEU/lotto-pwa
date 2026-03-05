@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
+      - name: Pull latest changes
+        run: git pull --rebase origin main
+
       - name: Fetch latest draws
         run: python scripts/update_draws.py
 
