@@ -64,10 +64,17 @@ def fetch_draw(session: requests.Session, no: int) -> dict | None:
         resp = session.get(url, headers=HEADERS, timeout=15)
         resp.raise_for_status()
         html = resp.text
+        print(f"  [{no}] response length: {len(html)}, status: {resp.status_code}")
         if len(html) < 1000:
-            print(f"  [{no}] response too short ({len(html)} bytes)")
+            print(f"  [{no}] response too short, first 500 chars: {html[:500]}")
             return None
-        return parse_draw_from_html(html, no)
+        result = parse_draw_from_html(html, no)
+        if result is None:
+            # Debug: show what we got
+            print(f"  [{no}] parse failed. Has '제' in html: {'제' in html}")
+            h4_matches = re.findall(r'<h4[^>]*>.*?</h4>', html[:5000], re.DOTALL)
+            print(f"  [{no}] h4 tags found: {h4_matches[:3]}")
+        return result
     except Exception as e:
         print(f"  [{no}] request failed: {e}")
         return None
