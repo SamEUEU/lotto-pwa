@@ -353,3 +353,50 @@ input:focus, select:focus{
 .ball-r{ background: #ff7272; }
 .ball-g{ background: #aaa; }
 .ball-p{ background: #b0d840; }
+.ball-sm{
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ===== Frequency ===== */
+.freq-info{
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.freq-grid{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.freq-item{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.freq-bar-bg{
+  flex: 1;
+  height: 14px;
+  background: #f0f0f0;
+  border-radius: 7px;
+  overflow: hidden;
+}
+.freq-bar{
+  height: 100%;
+  border-radius: 7px;
+  min-width: 2px;
+}
+.freq-bar.ball-y{ background: #fbc400; }
+.freq-bar.ball-b{ background: #69c8f2; }
+.freq-bar.ball-r{ background: #ff7272; }
+.freq-bar.ball-g{ background: #aaa; }
+.freq-bar.ball-p{ background: #b0d840; }
+.freq-count{
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink);
+  width: 30px;
+  text-align: right;
+}

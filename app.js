@@ -118,6 +118,7 @@ $("update").onclick = async () => {
 
     $("rRound").textContent = latest ? `회차: 제 ${latest}회` : "회차: -";
     renderHistory(draws);
+    renderFrequency(draws);
   } catch (e) {
     setStatus("업데이트 실패: " + e.message, "err");
   } finally {
@@ -202,6 +203,32 @@ function renderHistory(draws) {
     </table>`;
 }
 
+function renderFrequency(draws) {
+  const el = $("freqBody");
+  if (!draws.length) {
+    el.innerHTML = '<div class="placeholder">"데이터 업데이트"를 눌러 데이터를 먼저 받아주세요.</div>';
+    return;
+  }
+  const counts = {};
+  for (let i = 1; i <= 45; i++) counts[i] = 0;
+  draws.forEach(d => d.nums.forEach(n => counts[n]++));
+  const maxCount = Math.max(...Object.values(counts));
+
+  el.innerHTML = `
+    <div class="freq-info">총 ${draws.length}회차 기준</div>
+    <div class="freq-grid">${
+      Array.from({ length: 45 }, (_, i) => {
+        const n = i + 1;
+        const pct = (counts[n] / maxCount * 100).toFixed(0);
+        return `<div class="freq-item">
+          <span class="ball ball-sm ${ballColor(n)}">${n}</span>
+          <div class="freq-bar-bg"><div class="freq-bar ${ballColor(n)}" style="width:${pct}%"></div></div>
+          <span class="freq-count">${counts[n]}</span>
+        </div>`;
+      }).join("")
+    }</div>`;
+}
+
 // 초기
 updateExplainHeader();
 $("explainText").textContent =
@@ -225,5 +252,6 @@ setStatus("준비됨");
     }
   }
   renderHistory(draws);
+  renderFrequency(draws);
 })();
 
