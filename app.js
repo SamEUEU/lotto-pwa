@@ -182,6 +182,7 @@ function ballColor(n) {
 
 function renderHistory(draws) {
   const el = $("historyBody");
+  if (!el) return;
   if (!draws.length) {
     el.innerHTML = '<div class="placeholder">"데이터 업데이트"를 눌러 데이터를 먼저 받아주세요.</div>';
     return;
@@ -205,6 +206,7 @@ function renderHistory(draws) {
 
 function renderFrequency(draws) {
   const el = $("freqBody");
+  if (!el) return;
   if (!draws.length) {
     el.innerHTML = '<div class="placeholder">"데이터 업데이트"를 눌러 데이터를 먼저 받아주세요.</div>';
     return;
