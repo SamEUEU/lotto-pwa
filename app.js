@@ -209,5 +209,21 @@ $("explainText").textContent =
   `데이터 범위: ${rangeLabel(Number($("lookback").value))}\n\n` +
   `준비됨. 먼저 "데이터 업데이트"를 눌러 데이터를 내려받으세요.`;
 setStatus("준비됨");
-renderHistory(loadDraws());
+
+// 초기 로드: localStorage에 데이터 없으면 GitHub에서 자동 fetch
+(async () => {
+  let draws = loadDraws();
+  if (!draws.length) {
+    try {
+      draws = await fetchDrawsFromGithub();
+      saveDraws(draws);
+      const latest = latestNo(draws);
+      $("rRound").textContent = latest ? `회차: 제 ${latest}회` : "회차: -";
+      setStatus(`데이터 로드 완료 (최신: ${latest}회)`, "ok");
+    } catch (e) {
+      setStatus("데이터 자동 로드 실패. '데이터 업데이트'를 눌러주세요.", "err");
+    }
+  }
+  renderHistory(draws);
+})();
 
